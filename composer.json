@@ -1,0 +1,53 @@
+{
+    "name": "rawnoq/laravel-settings",
+    "description": "A powerful Laravel package for managing application settings with full translatable support",
+    "keywords": ["laravel", "settings", "translatable", "configuration", "multilingual"],
+    "license": "MIT",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Rawnoq",
+            "email": "info@rawnoq.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^12.0",
+        "illuminate/database": "^12.0",
+        "illuminate/http": "^12.0",
+        "spatie/laravel-query-builder": "^6.0",
+        "astrotomic/laravel-translatable": "^11.16"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.0",
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Rawnoq\\Settings\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Rawnoq\\Settings\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "../../vendor/bin/phpunit -c phpunit.xml.dist"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Rawnoq\\Settings\\SettingsServiceProvider"
+            ],
+            "aliases": {
+                "Settings": "Rawnoq\\Settings\\Facades\\Settings"
+            }
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
