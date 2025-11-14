@@ -2,7 +2,7 @@
     "name": "rawnoq/laravel-settings",
     "description": "A powerful Laravel package for managing application settings with full translatable support",
     "keywords": ["laravel", "settings", "translatable", "configuration", "multilingual"],
-    "version": "1.0.1",
+    "version": "1.0.2",
     "license": "MIT",
     "type": "library",
     "authors": [

@@ -5,15 +5,30 @@ namespace Rawnoq\Settings\Repositories;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Rawnoq\Settings\Models\Setting;
-use Spatie\QueryBuilder\AllowedFilter;
-use Spatie\QueryBuilder\QueryBuilder;
 
-class SettingRepository extends BaseRepository
+class SettingRepository
 {
+    /**
+     * @var Setting
+     */
+    protected $model;
+
+    /**
+     * SettingRepository constructor.
+     */
     public function __construct(Setting $model)
     {
-        parent::__construct($model);
+        $this->model = $model;
+    }
+
+    /**
+     * Get the model instance.
+     */
+    public function getModel(): Model
+    {
+        return $this->model;
     }
 
     public function firstOrNewByKey(string $key): Setting
@@ -40,67 +55,76 @@ class SettingRepository extends BaseRepository
         return $setting;
     }
 
-    public function getByKey(string $key): Setting
+    public function getByKey(string $key, bool $withTranslations = false): Setting
     {
-        return QueryBuilder::for(Setting::class)
-            ->allowedIncludes(['translations'])
-            ->where('key', $key)
-            ->firstOrFail();
+        $query = $this->model->newQuery()->where('key', $key);
+
+        if ($withTranslations) {
+            $query->with('translations');
+        }
+
+        $setting = $query->firstOrFail();
+        
+        if ($withTranslations) {
+            $setting->setAttribute('_show_translations', true);
+        }
+
+        return $setting;
     }
 
-    public function getManyByKeys(array $keys): Collection
+    public function getManyByKeys(array $keys, bool $withTranslations = false): Collection
     {
-        return QueryBuilder::for(Setting::class)
-            ->allowedIncludes(['translations'])
-            ->whereIn('key', $keys)
-            ->get();
+        $query = $this->model->newQuery()->whereIn('key', $keys);
+
+        if ($withTranslations) {
+            $query->with('translations');
+        }
+
+        $settings = $query->get();
+        
+        if ($withTranslations) {
+            $settings->each(fn ($setting) => $setting->setAttribute('_show_translations', true));
+        }
+
+        return $settings;
     }
 
-    public function getAll(): LengthAwarePaginator|Paginator|Collection
+    public function getAll(bool $withTranslations = false): LengthAwarePaginator|Paginator|Collection
     {
-        $query = QueryBuilder::for(Setting::class)
-            ->allowedFilters([
-                AllowedFilter::exact('key'),
-                AllowedFilter::callback('group', function ($query, $value) {
-                    // Handle both string (comma-separated) and array values
-                    if (is_array($value)) {
-                        $groups = array_filter(array_map('trim', $value));
-                    } else {
-                        $groups = array_filter(array_map('trim', explode(',', (string) $value)));
-                    }
+        $query = $this->model->newQuery();
 
-                    if (empty($groups)) {
-                        return;
-                    }
+        if ($withTranslations) {
+            $query->with('translations');
+        }
 
-                    $query->where(function ($q) use ($groups) {
-                        foreach ($groups as $group) {
-                            $q->orWhere(function ($subQuery) use ($group) {
-                                $subQuery->where('group', $group)
-                                    ->orWhere('group', 'like', $group.',%')
-                                    ->orWhere('group', 'like', '%,'.$group.',%')
-                                    ->orWhere('group', 'like', '%,'.$group);
-                            });
-                        }
-                    });
-                }),
-            ])
-            ->allowedIncludes(['translations']);
+        $settings = $query->get();
+        
+        if ($withTranslations) {
+            $settings->each(fn ($setting) => $setting->setAttribute('_show_translations', true));
+        }
 
-        return $query->get();
+        return $settings;
     }
 
-    public function getByGroup(string $group): Collection
+    public function getByGroup(string $group, bool $withTranslations = false): Collection
     {
-        return QueryBuilder::for(Setting::class)
-            ->allowedIncludes(['translations'])
-            ->where(function ($query) use ($group) {
-                $query->where('group', $group)
-                    ->orWhere('group', 'like', $group.',%')
-                    ->orWhere('group', 'like', '%,'.$group.',%')
-                    ->orWhere('group', 'like', '%,'.$group);
-            })
-            ->get();
+        $query = $this->model->newQuery()->where(function ($query) use ($group) {
+            $query->where('group', $group)
+                ->orWhere('group', 'like', $group.',%')
+                ->orWhere('group', 'like', '%,'.$group.',%')
+                ->orWhere('group', 'like', '%,'.$group);
+        });
+
+        if ($withTranslations) {
+            $query->with('translations');
+        }
+
+        $settings = $query->get();
+        
+        if ($withTranslations) {
+            $settings->each(fn ($setting) => $setting->setAttribute('_show_translations', true));
+        }
+
+        return $settings;
     }
 }
-

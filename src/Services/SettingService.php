@@ -11,9 +11,54 @@ use Rawnoq\Settings\Repositories\SettingRepository;
 class SettingService
 {
     /**
+     * Indicates whether subsequent read operations should eager load translations.
+     */
+    private bool $withTranslationsFlag = false;
+
+    /**
      * Constructor
      */
     public function __construct(private SettingRepository $repository) {}
+
+    /**
+     * Toggle eager loading of translations for the next read call.
+     */
+    public function withTranslations(bool $withTranslations = true): self
+    {
+        $this->withTranslationsFlag = $withTranslations;
+
+        return $this;
+    }
+
+    /**
+     * Disable eager loading of translations for the next read call.
+     */
+    public function withoutTranslations(bool $without = true): self
+    {
+        $this->withTranslationsFlag = !$without;
+
+        return $this;
+    }
+
+    /**
+     * Determine if translations should be loaded, prioritizing explicit arguments.
+     */
+    private function resolveTranslationsFlag(bool $explicit): bool
+    {
+        if ($explicit) {
+            $this->withTranslationsFlag = false;
+
+            return true;
+        }
+
+        if ($this->withTranslationsFlag) {
+            $this->withTranslationsFlag = false;
+
+            return true;
+        }
+
+        return false;
+    }
 
     /**
      * Set a setting by key
@@ -178,39 +223,46 @@ class SettingService
      * - string key  => returns Setting
      * - array keys  => returns Collection
      */
-    public function get(string|array $key): Collection|Setting
+    public function get(string|array $key, bool $withTranslations = false): Collection|Setting
     {
+        $withTranslations = $this->resolveTranslationsFlag($withTranslations);
+
         if (is_array($key)) {
             $keys = array_values($key);
 
-            return $this->repository->getManyByKeys($keys);
+            return $this->repository->getManyByKeys($keys, $withTranslations);
         }
 
-        return $this->repository->getByKey($key);
+        return $this->repository->getByKey($key, $withTranslations);
     }
 
     /**
      * Get all settings
      */
-    public function all(): LengthAwarePaginator|Paginator|Collection
+    public function all(bool $withTranslations = false): LengthAwarePaginator|Paginator|Collection
     {
-        return $this->repository->getAll();
+        $withTranslations = $this->resolveTranslationsFlag($withTranslations);
+
+        return $this->repository->getAll($withTranslations);
     }
 
     /**
      * Get settings by group
      */
-    public function getByGroup(string $group): Collection
+    public function getByGroup(string $group, bool $withTranslations = false): Collection
     {
-        return $this->repository->getByGroup($group);
+        $withTranslations = $this->resolveTranslationsFlag($withTranslations);
+
+        return $this->repository->getByGroup($group, $withTranslations);
     }
 
     /**
      * Get settings by group as key-value array
      */
-    public function getByGroupAsKeyValue(string $group): array
+    public function getByGroupAsKeyValue(string $group, bool $withTranslations = false): array
     {
-        $settings = $this->repository->getByGroup($group);
+        $withTranslations = $this->resolveTranslationsFlag($withTranslations);
+        $settings = $this->repository->getByGroup($group, $withTranslations);
 
         return $settings->mapWithKeys(function ($setting) {
             return [$setting->key => $setting->resolved_value];

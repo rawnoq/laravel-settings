@@ -109,4 +109,13 @@ class Setting extends Model
 
         return array_filter(array_map('trim', explode(',', $group)));
     }
+
+    /**
+     * Determine if translations should be included in the response.
+     * Only returns true if translations were explicitly loaded via withTranslations(true).
+     */
+    public function shouldShowTranslations(): bool
+    {
+        return $this->getAttribute('_show_translations') === true;
+    }
 }
